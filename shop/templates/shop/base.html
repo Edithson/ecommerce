@@ -179,50 +179,136 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script>
-        let panier = JSON.parse(localStorage.getItem("panier"));
-        panier = panier || {};
-        let nbProduits = panier ? Object.keys(panier).length : 0;
-        $("#cart-count").text(nbProduits);
-        $(document).ready(function() {
-            let panier = JSON.parse(localStorage.getItem("panier"));
-            panier = panier || {};
-            let nbProduits = panier ? Object.keys(panier).length : 0;
-            $(".add-to-cart").click(function() {
-                let productId = $(this).data("product-id");
-                let panier = JSON.parse(localStorage.getItem("panier"));
-                panier = panier || {};
-                if (panier[productId]) {
-                    panier[productId] += 1;
-                } else {
-                    panier[productId] = 1;
-                }
-                localStorage.setItem("panier", JSON.stringify(panier));
+    // Le code doit être enveloppé dans document.ready pour garantir que le DOM est chargé.
+    $(document).ready(function() {
+        
+        // =================================================================
+        //                 FONCTIONS UTILITAIRES (Portée Locale)
+        // =================================================================
+        
+        /**
+         * Récupère l'objet panier du localStorage de façon sûre.
+         * @returns {Object} L'objet panier ou un objet vide {}.
+         */
+        function getPanier() {
+            const storedPanier = localStorage.getItem("panier");
+            // Utiliser un objet vide {} comme valeur par défaut, pas un tableau [].
+            return storedPanier ? JSON.parse(storedPanier) : {};
+        }
 
-                nbProduits = Object.keys(panier).length;
-                alert("Produit ajouté au panier !");
-                $("#cart-count").text(nbProduits);
-                showProductList(panier);
-            });
+        /**
+         * Sauvegarde l'objet panier dans le localStorage.
+         * @param {Object} panier - L'objet panier à sauvegarder.
+         */
+        function savePanier(panier) {
+            localStorage.setItem("panier", JSON.stringify(panier));
+        }
+        
+        /**
+         * Met à jour le compteur d'articles dans l'UI.
+         * @param {Object} panier - L'objet panier.
+         */
+        function updateCartCount(panier) {
+            // Utiliser Object.keys(panier).length pour compter les produits différents.
+            const nbProduits = Object.keys(panier).length;
+            $("#cart-count").text(nbProduits);
+        }
 
-            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
-            const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
-
-
-        });
-        panier = JSON.parse(localStorage.getItem("panier"));
-        panier = panier || {};
-        let list_panier = {};
+        /**
+         * Construit et met à jour le contenu de la popover du panier.
+         * @param {Object} panier - L'objet panier avec {id: {qte, title, ...}}.
+         */
         function showProductList(panier) {
             let panier_str = "";
-            panier_str += "<h5>Votre panier :</h5><br>";
-            for (let x in panier){
-                panier_str += document.getElementById("ptitle_" + x).innerHTML + " - " + panier[x] + " pièce(s)<br>";
+            panier_str += "<h6 class='fw-bold'>Votre panier :</h6><hr class='my-2'>";
+
+            // Vérifie si le panier est vide pour afficher un message
+            if (Object.keys(panier).length === 0) {
+                panier_str += "<p class='text-muted small'>Le panier est vide.</p>";
+            } else {
+                for (let productId in panier) {
+                    // Utilisation de .title et .qte selon la nouvelle structure
+                    panier_str += `<div>${panier[productId].title} - <span class='fw-bold'>${panier[productId].qte}</span> pièce(s)</div>`;
+                }
+                panier_str += "<hr class='my-2'>";
             }
+            
+            // Assurez-vous que la vue 'panier' est bien définie dans Django.
+            // Notez l'utilisation de guillemets simples autour de la balise Django pour éviter les conflits de citation.
+            panier_str += `<a href='{% url "panier" %}' class='btn btn-primary btn-sm w-100 mt-2'>Voir le panier</a>`;
+            
+            // Met à jour l'attribut data-bs-content de l'élément (cart-icon)
             document.getElementById("cart-icon").setAttribute("data-bs-content", panier_str);
         }
 
-        showProductList(panier)
-    </script>
+        // =================================================================
+        //                 INITIALISATION & ÉVÉNEMENTS
+        // =================================================================
+        
+        // 1. Initialisation au chargement de la page
+        const panierInitial = getPanier();
+        updateCartCount(panierInitial);
+        showProductList(panierInitial); 
+        
+        // 2. Événement Clic sur le bouton "Ajouter au panier"
+        $(".add-to-cart").click(function() {
+            // S'assurer que l'ID est une chaîne pour les clés d'objet
+            const productId = $(this).data("product-id").toString(); 
+            let panier = getPanier();
+
+            // Stocker l'élément DOM une seule fois
+            const productTitleElement = document.getElementById("ptitle_" + productId);
+            const productTitle = productTitleElement ? productTitleElement.innerHTML : 'Produit inconnu';
+            const productPriceElement = document.getElementById("pprice_" + productId);
+            const productPrice = productPriceElement ? productPriceElement.innerHTML : 'Prix inconnu';
+            
+            // Logique de mise à jour (légèrement simplifiée)
+            if (panier.hasOwnProperty(productId)) {
+                panier[productId].qte += 1;
+            } else {
+                panier[productId] = { 
+                    id: productId, // Pas strictement nécessaire si l'ID est la clé, mais peut être utile.
+                    qte: 1, 
+                    title: productTitle,
+                    price: productPrice
+                };
+            }
+            
+            savePanier(panier);
+
+            // Mise à jour de l'UI
+            updateCartCount(panier);
+            // Utilisation d'une notification plus discrète que 'alert' si possible (Toast Bootstrap)
+            console.log(`Produit ajouté au panier : ${productTitle} (Total: ${panier[productId].qte})`);
+            
+            // Mettre à jour la popover
+            showProductList(panier); 
+            
+            // Re-initialiser la popover pour afficher le nouveau contenu
+            const cartIconEl = document.getElementById('cart-icon');
+            if (cartIconEl) {
+                // Si la popover existe, la met à jour ou la crée
+                const popover = bootstrap.Popover.getInstance(cartIconEl) || new bootstrap.Popover(cartIconEl, {
+                    html: true,
+                    sanitize: false,
+                    content: document.getElementById("cart-icon").getAttribute("data-bs-content")
+                });
+                // Si la popover était affichée, force son affichage pour actualiser le contenu
+                if (popover._isShown()) {
+                    popover.hide();
+                    popover.show();
+                }
+            }
+        });
+
+        // 3. Gestion de la Popover Bootstrap (Définition initiale)
+        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl, {
+            html: true, 
+            sanitize: false 
+        }));
+    });
+</script>
 
     {% block js %}
 
