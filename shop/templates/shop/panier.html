@@ -4,6 +4,12 @@
 <div class="container py-5">
     <h1 class="mb-4 fw-bold">Votre Panier d'Achat</h1>
 
+    {% if msg != None %}
+        <div class="alert alert-success" role="alert">
+            {{ msg }}
+        </div>
+    {% endif %}
+
     <div class="row">
         
         <div class="col-lg-8">
@@ -44,29 +50,29 @@
                 <div class="card-header bg-primary text-white fw-bold">
                     Récapitulatif de la Commande
                 </div>
-                <form method="POST">
+                <form method="POST" id="cmd-form">
                     {% csrf_token %}
                     <div class="card-body">
                         <input type="hidden" name="articles" id="articles-input">
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" name="nom_prenom" id="floatingNomPrenom" placeholder="Nom et prénom">
+                            <input type="text" class="form-control" name="nom_prenom" id="floatingNomPrenom" placeholder="Nom et prénom" required>
                             <label for="floatingNomPrenom">Nom et prénom</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="email" class="form-control" name="email" id="floatingEmail" placeholder="Email">
+                            <input type="email" class="form-control" name="email" id="floatingEmail" placeholder="Email" required>
                             <label for="floatingEmail">Email</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" name="adresse" id="floatingAdr" placeholder="Adresse complete">
+                            <input type="text" class="form-control" name="adresse" id="floatingAdr" placeholder="Adresse complete" required>
                             <label for="floatingAdr">Adresse complete</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" name="telephone" id="floatingTel" placeholder="Téléphone">
+                            <input type="text" class="form-control" name="telephone" id="floatingTel" placeholder="Téléphone" required>
                             <label for="floatingTel">Téléphone</label>
                         </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-success btn-lg w-100" type="submit">
+                        <button class="btn btn-success btn-lg w-100" id="valid-cmd-form" type="submit">
                             <i class="fas fa-lock me-2"></i> Passer à la Caisse
                         </button>
                         <p class="mt-2 text-center small text-muted">Paiement 100% sécurisé.</p>
@@ -80,9 +86,17 @@
 
 {% block js %}
 <script>
+    $('#cmd-form').submit(function(e){
+        e.preventDefault();
+        localStorage.removeItem("panier");
+        const form = this;
+        form.submit();
+    })
     document.addEventListener("DOMContentLoaded", function() {
         let articles = localStorage.getItem("panier") ? JSON.parse(localStorage.getItem("panier")) : {};
-        console.log(articles);
+        if(!articles || Object.keys(articles).length === 0) {
+            document.getElementById("valid-cmd-form").setAttribute("disabled", "disabled");
+        }
         document.getElementById("articles-input").value = JSON.stringify(articles);
         let produitsDansPanier = Object.values(articles);
         produitsDansPanier.forEach(function(article, index) {
