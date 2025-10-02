@@ -1,0 +1,72 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row gx-5">
+        
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card shadow-sm border-0 h-100">
+                <img src="{{ product.image.url }}" class="img-fluid rounded-3" alt="{{ product.name }}" style="max-height: 550px; object-fit: contain;">
+                
+                <div class="p-3 d-flex justify-content-center">
+                    <small class="text-muted">Aperçu de l'image principale</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                
+                <div>
+                    <h1 class="fw-bold mb-1">{{ product.name }}</h1>
+                    <span class="badge bg-primary rounded-pill">{{ product.category.name }}</span>
+                </div>
+                
+                <h2 class="text-success fw-bolder mt-0 ms-auto">
+                    {{ product.price|floatformat:0 }} FCFA
+                </h2>
+            </div>
+            
+            <hr class="mb-4">
+
+            <h5 class="mb-2">Description du Produit</h5>
+            <p class="text-muted mb-4">{{ product.description|linebreaks }}</p>
+
+            <div class="row mb-4 text-center">
+                <div class="col-6">
+                    <p class="mb-0"><i class="fas fa-check-circle text-success me-2"></i> En Stock</p>
+                    <small class="text-muted">Expédition rapide</small>
+                </div>
+                <div class="col-6 border-start">
+                    <p class="mb-0"><i class="fas fa-truck text-info me-2"></i> Livraison sous 3-5 jours</p>
+                    <small class="text-muted">Frais calculés à la caisse</small>
+                </div>
+            </div>
+            
+            <hr class="mb-4">
+
+            <div class="d-flex align-items-center mb-4">
+                <label for="quantity" class="form-label me-3 mb-0 fw-semibold">Quantité:</label>
+                <input type="number" id="quantity" name="quantity" class="form-control form-control-sm me-4" value="1" min="1" style="width: 70px;">
+                
+                <button class="btn btn-primary btn-lg flex-grow-1 me-2" type="button">
+                    <i class="fas fa-cart-plus me-2"></i> Ajouter au panier
+                </button>
+                
+                <button class="btn btn-outline-danger btn-lg" type="button" title="Ajouter aux Favoris">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+
+            <div class="p-3 bg-light rounded-3 text-center">
+                <p class="mb-1 fw-semibold text-dark"><i class="fas fa-shield-alt me-2 text-primary"></i> Paiement 100% sécurisé</p>
+                <small class="text-muted">Garantie 30 jours satisfait ou remboursé</small>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="{% static 'shop/styles.css' %}"> {% endcomment %}
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    {% comment %} importation du script du bootstrap {% endcomment %}
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9gybB8c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5sA5" crossorigin="anonymous"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,7 +61,7 @@
 
 <body class="d-flex flex-column h-100">
     <header>
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">E-com</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,11 +94,14 @@
                         <input class="form-control me-2" type="search" name="search-text" placeholder="Rechercher" aria-label="Search"/>
                         <button class="btn btn-outline-success" type="submit">Rechercher</button>
                     </form>
+                    <i class="fas fa-shopping-cart m-3 btn btn-outline-success position-relative" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-content="Articles dans le panier..." id="cart-icon" data-bs-html="true">
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">{{ nbProduits }}</span>
+                    </i>
                 </div>
             </div>
-            </nav>
+        </nav>
     </header>
-    <main class="flex-shrink-0">
+    <main class="flex-shrink-0 mt-5 pt-4">
         {% block content %}
         
         {% endblock %}
@@ -170,6 +178,141 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script>
+    // Le code doit être enveloppé dans document.ready pour garantir que le DOM est chargé.
+    $(document).ready(function() {
+        
+        // =================================================================
+        //                 FONCTIONS UTILITAIRES (Portée Locale)
+        // =================================================================
+        
+        /**
+         * Récupère l'objet panier du localStorage de façon sûre.
+         * @returns {Object} L'objet panier ou un objet vide {}.
+         */
+        function getPanier() {
+            const storedPanier = localStorage.getItem("panier");
+            // Utiliser un objet vide {} comme valeur par défaut, pas un tableau [].
+            return storedPanier ? JSON.parse(storedPanier) : {};
+        }
+
+        /**
+         * Sauvegarde l'objet panier dans le localStorage.
+         * @param {Object} panier - L'objet panier à sauvegarder.
+         */
+        function savePanier(panier) {
+            localStorage.setItem("panier", JSON.stringify(panier));
+        }
+        
+        /**
+         * Met à jour le compteur d'articles dans l'UI.
+         * @param {Object} panier - L'objet panier.
+         */
+        function updateCartCount(panier) {
+            // Utiliser Object.keys(panier).length pour compter les produits différents.
+            const nbProduits = Object.keys(panier).length;
+            $("#cart-count").text(nbProduits);
+        }
+
+        /**
+         * Construit et met à jour le contenu de la popover du panier.
+         * @param {Object} panier - L'objet panier avec {id: {qte, title, ...}}.
+         */
+        function showProductList(panier) {
+            let panier_str = "";
+            panier_str += "<h6 class='fw-bold'>Votre panier :</h6><hr class='my-2'>";
+
+            // Vérifie si le panier est vide pour afficher un message
+            if (Object.keys(panier).length === 0) {
+                panier_str += "<p class='text-muted small'>Le panier est vide.</p>";
+            } else {
+                for (let productId in panier) {
+                    // Utilisation de .title et .qte selon la nouvelle structure
+                    panier_str += `<div>${panier[productId].title} - <span class='fw-bold'>${panier[productId].qte}</span> pièce(s)</div>`;
+                }
+                panier_str += "<hr class='my-2'>";
+            }
+            
+            // Assurez-vous que la vue 'panier' est bien définie dans Django.
+            // Notez l'utilisation de guillemets simples autour de la balise Django pour éviter les conflits de citation.
+            panier_str += `<a href='{% url "panier" %}' class='btn btn-primary btn-sm w-100 mt-2'>Voir le panier</a>`;
+            
+            // Met à jour l'attribut data-bs-content de l'élément (cart-icon)
+            document.getElementById("cart-icon").setAttribute("data-bs-content", panier_str);
+        }
+
+        // =================================================================
+        //                 INITIALISATION & ÉVÉNEMENTS
+        // =================================================================
+        
+        // 1. Initialisation au chargement de la page
+        const panierInitial = getPanier();
+        updateCartCount(panierInitial);
+        showProductList(panierInitial); 
+        
+        // 2. Événement Clic sur le bouton "Ajouter au panier"
+        $(".add-to-cart").click(function() {
+            // S'assurer que l'ID est une chaîne pour les clés d'objet
+            const productId = $(this).data("product-id").toString(); 
+            let panier = getPanier();
+
+            // Stocker l'élément DOM une seule fois
+            const productTitleElement = document.getElementById("ptitle_" + productId);
+            const productTitle = productTitleElement ? productTitleElement.innerHTML : 'Produit inconnu';
+            const productPriceElement = document.getElementById("pprice_" + productId);
+            const productPrice = productPriceElement ? productPriceElement.innerHTML : 'Prix inconnu';
+            
+            // Logique de mise à jour (légèrement simplifiée)
+            if (panier.hasOwnProperty(productId)) {
+                panier[productId].qte += 1;
+            } else {
+                panier[productId] = { 
+                    id: productId, // Pas strictement nécessaire si l'ID est la clé, mais peut être utile.
+                    qte: 1, 
+                    title: productTitle,
+                    price: productPrice
+                };
+            }
+            
+            savePanier(panier);
+
+            // Mise à jour de l'UI
+            updateCartCount(panier);
+            // Utilisation d'une notification plus discrète que 'alert' si possible (Toast Bootstrap)
+            console.log(`Produit ajouté au panier : ${productTitle} (Total: ${panier[productId].qte})`);
+            
+            // Mettre à jour la popover
+            showProductList(panier); 
+            
+            // Re-initialiser la popover pour afficher le nouveau contenu
+            const cartIconEl = document.getElementById('cart-icon');
+            if (cartIconEl) {
+                // Si la popover existe, la met à jour ou la crée
+                const popover = bootstrap.Popover.getInstance(cartIconEl) || new bootstrap.Popover(cartIconEl, {
+                    html: true,
+                    sanitize: false,
+                    content: document.getElementById("cart-icon").getAttribute("data-bs-content")
+                });
+                // Si la popover était affichée, force son affichage pour actualiser le contenu
+                if (popover._isShown()) {
+                    popover.hide();
+                    popover.show();
+                }
+            }
+        });
+
+        // 3. Gestion de la Popover Bootstrap (Définition initiale)
+        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl, {
+            html: true, 
+            sanitize: false 
+        }));
+    });
+</script>
+
+    {% block js %}
+
+    {% endblock %}
 
 </body>
 

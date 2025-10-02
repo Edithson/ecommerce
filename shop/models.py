@@ -26,3 +26,17 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Commande(models.Model):
+    items = models.TextField(null=True, blank=True)
+    nom_prenom = models.CharField(max_length=200)
+    email = models.EmailField()
+    adresse = models.CharField(max_length=300)
+    telephone = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.nom_prenom + ' - ' + self.created_at.strftime('%Y-%m-%d %H:%M:%S')
