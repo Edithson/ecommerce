@@ -30,6 +30,7 @@ def show(request, product_id):
     return render(request, 'shop/show.html', context)
 
 def panier(request):
+    msg = None
     if request.method == "POST":
         items = request.POST.get("articles")
         nom_prenom = request.POST.get("nom_prenom")
@@ -45,6 +46,10 @@ def panier(request):
             telephone=telephone
         )
         commande.save()
-        # Vous pouvez ajouter un message de succès ou rediriger vers une autre page
+        msg = "Votre commande a bien été enregistrée!"
+    
+    context = {
+        'msg': msg
+    }
 
-    return render(request, 'shop/panier.html')
+    return render(request, 'shop/panier.html', context)
